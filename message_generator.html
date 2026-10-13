@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Draft a message · LocalBiz AI{% endblock %}
+{% block breadcrumb %}Draft a message{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">A thoughtful nudge, made easier</p><h1>Draft a customer message</h1><p class="page-description">Give your local model a little context. You'll always review the words before sending.</p></div>
+</div>
+<div class="message-layout">
+  <section class="panel message-form">
+    <div class="panel-head" style="padding:0 0 17px;margin-bottom:18px"><div><h2 class="panel-title">Message details</h2><p class="panel-subtitle">Keep it simple. Edit the result to sound like you.</p></div></div>
+    <form method="post" action="{{ url_for('message_generator') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid">
+        <div class="field">
+          <label for="customer_name">Customer name</label>
+          <input class="control" id="customer_name" name="customer_name" value="{{ form_data.customer_name }}" maxlength="160" required>
+        </div>
+        <div class="field">
+          <label for="invoice_number">Invoice number</label>
+          <input class="control" id="invoice_number" name="invoice_number" value="{{ form_data.invoice_number }}" maxlength="80" required>
+        </div>
+        <div class="field">
+          <label for="amount">Amount</label>
+          <input class="control" id="amount" name="amount" type="number" min="0.01" step="0.01" value="{{ form_data.amount }}" required>
+        </div>
+        <div class="field">
+          <label for="due_date">Due date <span class="field-hint">(optional)</span></label>
+          <input class="control" id="due_date" name="due_date" type="date" value="{{ form_data.due_date }}">
+        </div>
+        <div class="field field-full">
+          <label for="message_type">Message type</label>
+          {% set selected_type = form_data.message_type %}
+          <select class="control select-control" id="message_type" name="message_type" required>
+            <option value="payment_reminder" {% if selected_type == 'payment_reminder' %}selected{% endif %}>Payment reminder</option>
+            <option value="overdue_reminder" {% if selected_type == 'overdue_reminder' %}selected{% endif %}>Overdue payment reminder</option>
+            <option value="payment_confirmation" {% if selected_type == 'payment_confirmation' %}selected{% endif %}>Payment confirmation</option>
+            <option value="invoice_follow_up" {% if selected_type == 'invoice_follow_up' %}selected{% endif %}>Invoice follow-up</option>
+            <option value="thank_you" {% if selected_type == 'thank_you' %}selected{% endif %}>Thank-you message</option>
+          </select>
+        </div>
+        <div class="field field-full">
+          <span class="field-label">Tone</span>
+          {% set chosen_tone = form_data.tone %}
+          <div class="tone-options" role="radiogroup" aria-label="Message tone">
+            {% for tone in ['polite', 'friendly', 'formal'] %}
+            <span class="tone-option"><input type="radio" id="tone-{{ tone }}" name="tone" value="{{ tone }}" {% if chosen_tone == tone %}checked{% endif %}><label for="tone-{{ tone }}">{{ tone|capitalize }}</label></span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="field field-full">
+          <label for="instructions">Additional instructions <span class="field-hint">(optional)</span></label>
+          <textarea class="control" id="instructions" name="instructions" maxlength="500" placeholder="Anything else the message should include?">{{ form_data.instructions }}</textarea>
+        </div>
+      </div>
+      <div class="form-actions" style="margin-top:19px">
+        <button class="button button-block" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></svg>
+          Generate a draft
+        </button>
+      </div>
+    </form>
+    {% if ollama_error %}
+      <div class="flash error" role="alert" style="margin-top:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span>{{ ollama_error }}</span>
+      </div>
+    {% endif %}
+    <div class="local-model-strip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 12h5M9 19v2m6-2v2M2 9v6m20-6v6"/></svg>
+      Drafts are sent only to the Ollama endpoint you configure. The default address is local to the app.
+    </div>
+  </section>
+  <section class="panel message-result" aria-labelledby="draft-result-title">
+    <div class="result-top">
+      <div><h2 class="result-title" id="draft-result-title">Your draft</h2><span class="panel-subtitle">Review and adjust before you use it.</span></div>
+      {% if generated_message %}<button class="button button-secondary button-sm" type="button" data-copy-message><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span data-copy-label>Copy</span></button>{% endif %}
+    </div>
+    {% if generated_message %}
+    <div class="result-body">
+      <label class="sr-only" for="generated-message">Editable message draft</label>
+      <textarea class="generated-text" id="generated-message" data-generated-message>{{ generated_message }}</textarea>
+      <div class="result-foot"><span data-character-count>0 characters</span><span>Edits stay in this draft</span></div>
+    </div>
+    {% else %}
+    <div class="result-empty">
+      <div class="result-empty-inner">
+        <span class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v9a2.5 2.5 0 0 1-2.5 2.5H11l-5.5 4v-4.2A2.5 2.5 0 0 1 4 14.5v-9Z"/><path d="M8 8h8M8 11.5h5"/></svg></span>
+        <h3>A good note starts with context</h3>
+        <p>Fill in the details and generate a first draft. You stay in control of the final wording.</p>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

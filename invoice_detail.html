@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.invoice_number }} · LocalBiz AI{% endblock %}
+{% block breadcrumb %}Invoice detail{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('invoice_history') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 12H5m6 6-6-6 6-6"/></svg>Back to invoice history</a>
+<div class="page-heading">
+  <div><p class="eyebrow">Invoice record</p><h1>{{ invoice.invoice_number }}</h1><p class="page-description">Review the details saved in your workspace.</p></div>
+  <div class="page-actions"><span class="badge {% if invoice.status == 'paid' %}paid{% elif is_overdue %}overdue{% else %}pending{% endif %}">{% if is_overdue %}Overdue{% else %}{{ invoice.status }}{% endif %}</span></div>
+</div>
+<div class="detail-layout">
+  <section class="panel detail-panel">
+    <div class="detail-overview">
+      <div><p class="detail-number">{{ invoice.invoice_number }}</p><h2 class="detail-customer">{{ invoice.customer_name }}</h2></div>
+      <span class="customer-initial" aria-hidden="true" style="width:40px;height:40px;font-size:13px">{{ (invoice.customer_name or '?')[:1]|upper }}</span>
+    </div>
+    <div class="detail-total"><span class="detail-total-label">Invoice total</span><strong class="detail-total-value">{{ invoice.amount }}</strong></div>
+    <div class="detail-grid">
+      <div class="detail-field"><span>Invoice date</span><strong>{{ invoice.invoice_date }}</strong></div>
+      <div class="detail-field"><span>Due date</span><strong>{{ invoice.due_date }}</strong></div>
+      <div class="detail-field"><span>Payment status</span><strong>{{ 'Overdue' if is_overdue else invoice.status|capitalize }}</strong></div>
+      <div class="detail-field"><span>Added to workspace</span><strong>{{ invoice.created_at }}</strong></div>
+    </div>
+  </section>
+  <aside class="detail-side">
+    <section class="panel side-section">
+      <h3>Original document</h3>
+      {% if invoice.file_path %}
+      <div class="file-card">
+        <span class="file-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3.5h7l4 4v13H7a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z"/><path d="M14 3.5v4h4M8.5 13h7M8.5 16h4"/></svg></span>
+        <span><strong>Invoice PDF</strong><span>Stored with this invoice</span></span>
+      </div>
+      {% else %}
+      <p class="panel-subtitle">No document is attached to this record.</p>
+      {% endif %}
+    </section>
+    <section class="panel side-section">
+      <h3>Record timeline</h3>
+      <div class="timeline-item"><div class="timeline-rail"><span class="timeline-dot"></span></div><div class="timeline-copy"><strong>Added to invoice history</strong><span>{{ invoice.created_at }}</span></div></div>
+      <div class="timeline-item"><div class="timeline-rail"><span class="timeline-dot"></span></div><div class="timeline-copy"><strong>Invoice due date</strong><span>{{ invoice.due_date }}</span></div></div>
+    </section>
+    <section class="panel side-section">
+      <h3>Payment status</h3>
+      <form method="post" action="{{ url_for('update_invoice_status', invoice_id=invoice.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="payment-status">Update status</label>
+          <select class="control select-control" id="payment-status" name="status">
+            <option value="pending" {% if invoice.status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="paid" {% if invoice.status == 'paid' %}selected{% endif %}>Paid</option>
+          </select>
+        </div>
+        <button class="button button-secondary button-block" type="submit" style="margin-top:12px">Save status</button>
+      </form>
+      <form method="post" action="{{ url_for('delete_invoice', invoice_id=invoice.id) }}" style="margin-top:10px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="button button-quiet button-block" type="submit" data-confirm="Delete this invoice and its private PDF? This cannot be undone.">Delete invoice</button>
+      </form>
+    </section>
+    <a class="button button-quiet button-block" href="{{ url_for('message_generator') }}">Draft a customer message</a>
+  </aside>
+</div>
+{% endblock %}
