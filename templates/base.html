@@ -1,1 +1,83 @@
-
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#274837">
+  <title>{% block title %}LocalBiz AI{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="site-sidebar" aria-label="Main navigation">
+      <a class="brand" href="{{ url_for('dashboard') }}" aria-label="LocalBiz AI dashboard">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18.5V8.2l8-4.7 8 4.7v10.3"/><path d="M8.5 20v-6.5h7V20M3 20h18M8 9.5h.01M12 9.5h.01M16 9.5h.01"/></svg>
+        </span>
+        <span><span class="brand-name">LocalBiz AI</span><span class="brand-caption" style="display:block">Private workspace</span></span>
+      </a>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav-list">
+        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+          <span>Overview</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'upload_invoice' %}active{% endif %}" href="{{ url_for('upload_invoice') }}" {% if request.endpoint == 'upload_invoice' %}aria-current="page"{% endif %}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M5 14.5v4A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-4"/></svg>
+          <span>Add an invoice</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'invoice_history' or request.endpoint == 'invoice_detail' %}active{% endif %}" href="{{ url_for('invoice_history') }}" {% if request.endpoint == 'invoice_history' %}aria-current="page"{% endif %}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 3.5h7l4 4v13H7a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z"/><path d="M14 3.5v4h4M8.5 12h7M8.5 15.5h7"/></svg>
+          <span>Invoice history</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'message_generator' %}active{% endif %}" href="{{ url_for('message_generator') }}" {% if request.endpoint == 'message_generator' %}aria-current="page"{% endif %}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v9a2.5 2.5 0 0 1-2.5 2.5H11l-5.5 4v-4.2A2.5 2.5 0 0 1 4 14.5v-9Z"/><path d="M8 8h8M8 11.5h5"/></svg>
+          <span>Draft a message</span>
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-card">
+          <div class="privacy-heading">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>
+            Your work stays yours
+          </div>
+          <p>Invoice files stay with the app. Message drafts use the Ollama endpoint you configure.</p>
+        </div>
+        <div class="sidebar-footer">Made for <span>independent work</span></div>
+      </div>
+    </aside>
+    <div class="sidebar-scrim" data-sidebar-scrim></div>
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation" aria-expanded="false" aria-controls="site-sidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>
+          </button>
+          <div class="breadcrumb">LocalBiz AI <span aria-hidden="true">/</span> <strong>{% block breadcrumb %}Overview{% endblock %}</strong></div>
+        </div>
+        <div class="topbar-right">
+          <div class="local-status"><span class="status-dot" aria-hidden="true"></span> Local workspace</div>
+          <div class="avatar" aria-label="Your workspace">LB</div>
+        </div>
+      </header>
+      <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack" role="status" aria-live="polite">
+              {% for category, message in messages %}
+                <div class="flash {% if category in ['error', 'danger'] %}error{% elif category == 'warning' %}warning{% endif %}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+</body>
+</html>
